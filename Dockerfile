@@ -26,4 +26,4 @@ EXPOSE 8501
 ENV PORT 8501
 
 # Define the entry point for the container to run your Streamlit app
-CMD ["./venv/bin/streamlit", "run", "login.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+CMD ["./venv/bin/streamlit", "run", "app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
