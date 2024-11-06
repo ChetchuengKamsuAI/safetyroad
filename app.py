@@ -20,7 +20,7 @@ def get_defauts():
     return df
 
 # Titre de l'application
-st.set_page_config(page_title="Application d'Infrastructure Routière", layout="wide")
+st.set_page_config(page_title="Application d'Infrastructure Routière",page_icon= "🦺", layout="wide")
 st.title("Application d'Infrastructure Routière")
 
 # Onglets
@@ -39,7 +39,7 @@ with tabs[0]:
     filtered_df = defauts_df[defauts_df['gravite'].isin(gravite_filter)]
 
     # Afficher les graphiques dans des colonnes
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         st.subheader("Nombre de défauts par type")
@@ -59,6 +59,11 @@ with tabs[0]:
         plt.ylabel("Nombre de défauts")
         st.pyplot(plt)
 
+    with col3:
+        st.subheader("Proportion de défauts par gravité (Diagramme en cercle)")
+        gravite_counts.plot.pie(autopct='%1.1f%%', colors=sns.color_palette("Reds_d"), ylabel="")
+        st.pyplot(plt)
+
     st.subheader("Proportions de défauts par localisation")
     localisation_counts = filtered_df['localisation'].value_counts().head(10)
     plt.figure(figsize=(10, 6))
@@ -75,8 +80,8 @@ with tabs[1]:
     # Récupérer les défauts pour la carte
     defauts_df = get_defauts()
     
-    # Créer une carte Folium
-    m = folium.Map(location=[3.848, 11.508], zoom_start=12)
+    # Créer une carte Folium centrée sur le Cameroun avec un zoom plus large
+    m = folium.Map(location=[4.0, 12.0], zoom_start=7)
 
     # Ajouter des marqueurs pour chaque défaut
     for idx, row in defauts_df.iterrows():
@@ -90,9 +95,8 @@ with tabs[1]:
     folium.LayerControl().add_to(m)
     
     # Afficher la carte
-    st.components.v1.html(m._repr_html_(), height=500)
+    st.components.v1.html(m._repr_html_(), height=600)  # Agrandir la hauteur de la carte
 
-# Onglet Signalement
 # Onglet Signalement
 with tabs[2]:
     st.header("Formulaire de Signalement")
@@ -124,6 +128,8 @@ with tabs[2]:
         submitted = st.form_submit_button("Soumettre")
         if submitted:
             # Code pour insérer dans la base de données ici
-            # Ici vous pouvez ajouter la logique d'insertion avec l'ID d'usager, le type de défaut, la description, etc.
+            # Ajoutez la logique d'insertion avec l'ID d'usager, type de défaut, description, etc.
             st.success("Votre signalement a été soumis avec succès!")
-
+            
+            # Réinitialisation des champs après soumission
+            st.experimental_rerun()  # Redémarre l'application pour vider le formulaire
