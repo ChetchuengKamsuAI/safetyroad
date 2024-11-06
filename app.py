@@ -5,6 +5,19 @@ import folium
 from folium import plugins
 import matplotlib.pyplot as plt
 import seaborn as sns
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
+
+# Utiliser la clé API depuis la variable d'environnement
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Vérification si la clé est présente
+if not client.api_key:
+    raise ValueError("La clé API OpenAI n'est pas définie. Assurez-vous que le fichier .env est présent et que la variable OPENAI_API_KEY est correctement définie.")
 
 # Connexion à la base de données
 def get_db_connection():
@@ -18,13 +31,26 @@ def get_defauts():
     df = pd.read_sql(query, conn)
     conn.close()
     return df
+##_____________________######______________________________###################
+
+# Fonction pour obtenir une réponse de ChatGPT avec la nouvelle API
+def get_chatgpt_response(user_input):
+    completion = client.completions.create(
+        model="gpt-3.5-turbo",  # Choisir le modèle que vous souhaitez utiliser
+        prompt=user_input,      # Le texte d'entrée de l'utilisateur
+        max_tokens=150   
+    )
+
+    # Conversion en dictionnaire pour extraire la réponse
+    response = completion.model_dump()
+    return response['choices'][0]['message']['content']
 
 # Titre de l'application
 st.set_page_config(page_title="Application d'Infrastructure Routière",page_icon= "🦺", layout="wide")
 st.title("Application d'Infrastructure Routière")
 
 # Onglets
-tabs = st.tabs(["Dashboard", "Map", "Signalement"])
+tabs = st.tabs(["Dashboard", "Map", "Signalement", "Chatbot"])
 
 # Onglet Dashboard
 with tabs[0]:
@@ -133,3 +159,37 @@ with tabs[2]:
             
             # Réinitialisation des champs après soumission
             st.experimental_rerun()  # Redémarre l'application pour vider le formulaire
+
+
+#___________________________#_____________#______________________________
+# Onglet Chatbot
+with tabs[3]:
+    st.header("Chatbot d'Aide et d'Assistance")
+    st.write("Posez vos questions ici, et le chatbot vous répondra.")
+
+    # Initialisation de l'historique de la conversation
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    # Champ de saisie pour l'utilisateur
+    user_input = st.text_input("Vous:", placeholder="Tapez votre message ici...")
+
+    if st.button("Envoyer"):
+        if user_input:
+            # Ajouter le message utilisateur à l'historique
+            st.session_state.chat_history.append(("Vous", user_input))
+
+            # Obtenir une réponse de ChatGPT
+            chatbot_response = get_chatgpt_response(user_input)
+            st.session_state.chat_history.append(("Chatbot", chatbot_response))
+
+            # Effacer le champ de saisie après envoi
+            user_input = ""
+
+    # Afficher l'historique des conversations
+    st.write("### Historique de la conversation")
+    for sender, message in st.session_state.chat_history:
+        if sender == "Vous":
+            st.markdown(f"<div style='background-color: #e1f7d5; padding: 10px; border-radius: 10px; text-align: right;'>{message}</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<div style='background-color: #f1f0f0; padding: 10px; border-radius: 10px; text-align: left;'>{message}</div>", unsafe_allow_html=True)
