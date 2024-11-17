@@ -2,20 +2,14 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import folium
-from folium import plugins
 import matplotlib.pyplot as plt
 import seaborn as sns
-from openai import OpenAI
+import http.client
+import json
 
-# Remplacer la partie où on charge la clé API par une clé directe
-api_key = "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"  # Remplacez ceci par votre véritable clé API OpenAI
-
-# Initialisation du client OpenAI avec la clé API directe
-client = OpenAI(api_key=api_key)
-
-# Vérification si la clé est présente
-if not client.api_key:
-    raise ValueError("La clé API OpenAI n'est pas définie. Assurez-vous que la clé API est correctement définie.")
+# Configuration de l'API Key RapidAPI OpenAI
+API_KEY_RAPIDAPI = "b42adb4e32msh8d21b5255dfbcbap175e61jsn94765790282f"
+API_HOST = "chat-gpt26.p.rapidapi.com"
 
 # Connexion à la base de données
 def get_db_connection():
@@ -30,16 +24,32 @@ def get_defauts():
     conn.close()
     return df
 
-# Fonction pour obtenir une réponse de ChatGPT avec la nouvelle API
+# Fonction pour obtenir une réponse de ChatGPT via RapidAPI
 def get_chatgpt_response(user_input):
-    completion = client.completions.create(
-        model="gpt-3.5-turbo",  # Choisir le modèle que vous souhaitez utiliser
-        prompt=user_input,      # Le texte d'entrée de l'utilisateur
-        max_tokens=150   
-    )
+    conn = http.client.HTTPSConnection(API_HOST)
 
-    # Conversion en dictionnaire pour extraire la réponse
-    response = completion.model_dump()
+    # Préparation de la charge utile (payload) pour l'API
+    payload = json.dumps({
+        "model": "gpt-3.5-turbo",
+        "messages": [{"role": "user", "content": user_input}]
+    })
+
+    # Définition des headers de la requête
+    headers = {
+        'x-rapidapi-key': API_KEY_RAPIDAPI,
+        'x-rapidapi-host': API_HOST,
+        'Content-Type': "application/json"
+    }
+
+    # Envoi de la requête POST
+    conn.request("POST", "/", payload, headers)
+
+    # Récupération de la réponse
+    res = conn.getresponse()
+    data = res.read()
+
+    # Décodage et retour de la réponse
+    response = json.loads(data.decode("utf-8"))
     return response['choices'][0]['message']['content']
 
 # Titre de l'application
@@ -118,7 +128,7 @@ with tabs[1]:
     folium.LayerControl().add_to(m)
 
     # Afficher la carte
-    st.components.v1.html(m._repr_html_(), height=600)  # Agrandir la hauteur de la carte
+    st.components.v1.html(m._repr_html_(), height=600)
 
 # Onglet Signalement
 with tabs[2]:
@@ -151,14 +161,9 @@ with tabs[2]:
         submitted = st.form_submit_button("Soumettre")
         if submitted:
             # Code pour insérer dans la base de données ici
-            # Ajoutez la logique d'insertion avec l'ID d'usager, type de défaut, description, etc.
             st.success("Votre signalement a été soumis avec succès!")
-
-            # Réinitialisation des champs après soumission
             st.experimental_rerun()  # Redémarre l'application pour vider le formulaire
 
-
-#___________________________#_____________#______________________________
 # Onglet Chatbot
 with tabs[3]:
     st.header("Chatbot d'Aide et d'Assistance")
@@ -176,7 +181,7 @@ with tabs[3]:
             # Ajouter le message utilisateur à l'historique
             st.session_state.chat_history.append(("Vous", user_input))
 
-            # Obtenir une réponse de ChatGPT
+            # Obtenir une réponse de ChatGPT via RapidAPI
             chatbot_response = get_chatgpt_response(user_input)
             st.session_state.chat_history.append(("Chatbot", chatbot_response))
 
