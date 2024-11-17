@@ -2,14 +2,20 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import folium
+from folium import plugins
 import matplotlib.pyplot as plt
 import seaborn as sns
-import http.client
-import json
+from openai import OpenAI
 
-# Configuration de l'API Key RapidAPI OpenAI
-API_KEY_RAPIDAPI = "b42adb4e32msh8d21b5255dfbcbap175e61jsn94765790282f"
-API_HOST = "chat-gpt26.p.rapidapi.com"
+# Remplacer la partie où on charge la clé API par une clé directe
+api_key = "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"  # Remplacez ceci par votre véritable clé API OpenAI
+
+# Initialisation du client OpenAI avec la clé API directe
+client = OpenAI(api_key=api_key)
+
+# Vérification si la clé est présente
+if not client.api_key:
+    raise ValueError("La clé API OpenAI n'est pas définie. Assurez-vous que la clé API est correctement définie.")
 
 # Connexion à la base de données
 def get_db_connection():
@@ -24,33 +30,31 @@ def get_defauts():
     conn.close()
     return df
 
-# Fonction pour obtenir une réponse de ChatGPT via RapidAPI
+# Fonction pour obtenir une réponse de ChatGPT avec la nouvelle API
 def get_chatgpt_response(user_input):
-    conn = http.client.HTTPSConnection(API_HOST)
+    try:
+        # Appel à l'API OpenAI
+        completion = client.completions.create(
+            model="gpt-3.5-turbo",  # Choisir le modèle
+            prompt=user_input,      # Texte d'entrée de l'utilisateur
+            max_tokens=150
+        )
 
-    # Préparation de la charge utile (payload) pour l'API
-    payload = json.dumps({
-        "model": "gpt-3.5-turbo",
-        "messages": [{"role": "user", "content": user_input}]
-    })
+        # Afficher la réponse pour comprendre sa structure
+        print(completion)
 
-    # Définition des headers de la requête
-    headers = {
-        'x-rapidapi-key': API_KEY_RAPIDAPI,
-        'x-rapidapi-host': API_HOST,
-        'Content-Type': "application/json"
-    }
+        # Vérifier la structure de la réponse avant d'extraire
+        if 'choices' in completion and len(completion['choices']) > 0:
+            return completion['choices'][0]['message']['content']
+        else:
+            return "Aucune réponse valide reçue."
 
-    # Envoi de la requête POST
-    conn.request("POST", "/", payload, headers)
-
-    # Récupération de la réponse
-    res = conn.getresponse()
-    data = res.read()
-
-    # Décodage et retour de la réponse
-    response = json.loads(data.decode("utf-8"))
-    return response['choices'][0]['message']['content']
+    except KeyError as e:
+        st.error(f"Erreur dans la structure de la réponse : {e}")
+        return "Désolé, je n'ai pas pu traiter votre demande pour le moment."
+    except Exception as e:
+        st.error(f"Une erreur est survenue : {e}")
+        return "Une erreur inattendue est survenue. Veuillez réessayer."
 
 # Titre de l'application
 st.set_page_config(page_title="Application d'Infrastructure Routière", page_icon="🦺", layout="wide")
@@ -128,7 +132,7 @@ with tabs[1]:
     folium.LayerControl().add_to(m)
 
     # Afficher la carte
-    st.components.v1.html(m._repr_html_(), height=600)
+    st.components.v1.html(m._repr_html_(), height=600)  # Agrandir la hauteur de la carte
 
 # Onglet Signalement
 with tabs[2]:
@@ -161,9 +165,14 @@ with tabs[2]:
         submitted = st.form_submit_button("Soumettre")
         if submitted:
             # Code pour insérer dans la base de données ici
+            # Ajoutez la logique d'insertion avec l'ID d'usager, type de défaut, description, etc.
             st.success("Votre signalement a été soumis avec succès!")
+
+            # Réinitialisation des champs après soumission
             st.experimental_rerun()  # Redémarre l'application pour vider le formulaire
 
+
+#___________________________#_____________#______________________________
 # Onglet Chatbot
 with tabs[3]:
     st.header("Chatbot d'Aide et d'Assistance")
@@ -181,17 +190,10 @@ with tabs[3]:
             # Ajouter le message utilisateur à l'historique
             st.session_state.chat_history.append(("Vous", user_input))
 
-            # Obtenir une réponse de ChatGPT via RapidAPI
+            # Obtenir une réponse de ChatGPT
             chatbot_response = get_chatgpt_response(user_input)
             st.session_state.chat_history.append(("Chatbot", chatbot_response))
 
-            # Effacer le champ de saisie après envoi
-            user_input = ""
-
-    # Afficher l'historique des conversations
-    st.write("### Historique de la conversation")
-    for sender, message in st.session_state.chat_history:
-        if sender == "Vous":
-            st.markdown(f"<div style='background-color: #e1f7d5; padding: 10px; border-radius: 10px; text-align: right;'>{message}</div>", unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div style='background-color: #f1f0f0; padding: 10px; border-radius: 10px; text-align: left;'>{message}</div>", unsafe_allow_html=True)
+    # Afficher l'historique de la conversation
+    for speaker, message in st.session_state.chat_history:
+        st.write(f"**{speaker}:** {message}")
