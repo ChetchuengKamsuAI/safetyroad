@@ -6,18 +6,16 @@ from folium import plugins
 import matplotlib.pyplot as plt
 import seaborn as sns
 from openai import OpenAI
-import os
-from dotenv import load_dotenv
 
-# Charger les variables d'environnement depuis le fichier .env
-load_dotenv()
+# Remplacer la partie où on charge la clé API par une clé directe
+api_key = "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"  # Remplacez ceci par votre véritable clé API OpenAI
 
-# Utiliser la clé API depuis la variable d'environnement
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Initialisation du client OpenAI avec la clé API directe
+client = OpenAI(api_key=api_key)
 
 # Vérification si la clé est présente
 if not client.api_key:
-    raise ValueError("La clé API OpenAI n'est pas définie. Assurez-vous que le fichier .env est présent et que la variable OPENAI_API_KEY est correctement définie.")
+    raise ValueError("La clé API OpenAI n'est pas définie. Assurez-vous que la clé API est correctement définie.")
 
 # Connexion à la base de données
 def get_db_connection():
@@ -31,7 +29,6 @@ def get_defauts():
     df = pd.read_sql(query, conn)
     conn.close()
     return df
-##_____________________######______________________________###################
 
 # Fonction pour obtenir une réponse de ChatGPT avec la nouvelle API
 def get_chatgpt_response(user_input):
@@ -46,7 +43,7 @@ def get_chatgpt_response(user_input):
     return response['choices'][0]['message']['content']
 
 # Titre de l'application
-st.set_page_config(page_title="Application d'Infrastructure Routière",page_icon= "🦺", layout="wide")
+st.set_page_config(page_title="Application d'Infrastructure Routière", page_icon="🦺", layout="wide")
 st.title("Application d'Infrastructure Routière")
 
 # Onglets
@@ -105,7 +102,7 @@ with tabs[1]:
 
     # Récupérer les défauts pour la carte
     defauts_df = get_defauts()
-    
+
     # Créer une carte Folium centrée sur le Cameroun avec un zoom plus large
     m = folium.Map(location=[4.0, 12.0], zoom_start=7)
 
@@ -119,7 +116,7 @@ with tabs[1]:
 
     # Ajouter une couche de contrôle
     folium.LayerControl().add_to(m)
-    
+
     # Afficher la carte
     st.components.v1.html(m._repr_html_(), height=600)  # Agrandir la hauteur de la carte
 
@@ -130,33 +127,33 @@ with tabs[2]:
     with st.form("signalement_form"):
         # Champ pour l'ID de l'utilisateur
         usager_id = st.number_input("ID de l'usager", min_value=1, placeholder="Entrez votre ID d'usager")
-        
+
         # Sélection du type de défaut
         type_defaut = st.selectbox("Type de défaut", ["Nids-de-poule", "Feu de circulation cassé", "Panneau de signalisation manquant", "Route fissurée", "Éclairage public défectueux", "Glissière de sécurité endommagée", "Trottoir abîmé", "Marquage au sol effacé", "Débris sur la route", "Gouttière obstruée"])
-        
+
         # Champ pour la description
         description = st.text_area("Description", placeholder="Décrivez le défaut")
-        
+
         # Champ pour la localisation
         localisation = st.text_input("Localisation", placeholder="Où se trouve le défaut ?")
-        
+
         # Sélection de la gravité
         gravite = st.selectbox("Gravité", ["mineur", "majeur", "critique"])
-        
+
         # Champs pour latitude et longitude
         latitude = st.number_input("Latitude", format="%.6f")
         longitude = st.number_input("Longitude", format="%.6f")
-        
+
         # Téléchargement d'une photo
         photo = st.file_uploader("Télécharger une photo", type=["jpg", "jpeg", "png"])
-        
+
         # Bouton de soumission
         submitted = st.form_submit_button("Soumettre")
         if submitted:
             # Code pour insérer dans la base de données ici
             # Ajoutez la logique d'insertion avec l'ID d'usager, type de défaut, description, etc.
             st.success("Votre signalement a été soumis avec succès!")
-            
+
             # Réinitialisation des champs après soumission
             st.experimental_rerun()  # Redémarre l'application pour vider le formulaire
 
