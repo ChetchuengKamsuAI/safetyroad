@@ -57,50 +57,36 @@ tabs = st.tabs(["Dashboard", "Carte", "Signalement", "Chatbot"])
 
 # Onglet Dashboard
 with tabs[0]:
-     st.header("Dashboard")
-
-    # Récupérer les défauts d'infrastructure
+    st.header("Dashboard")
     defauts_df = get_defauts()
 
-    # Ajouter des filtres
     st.sidebar.header("Filtres")
-    gravite_filter = st.sidebar.multiselect("Filtrer par gravité", options=defauts_df['gravite'].unique(), default=defauts_df['gravite'].unique())
+    gravite_filter = st.sidebar.multiselect(
+        "Filtrer par gravité", options=defauts_df['gravite'].unique(), default=defauts_df['gravite'].unique()
+    )
     filtered_df = defauts_df[defauts_df['gravite'].isin(gravite_filter)]
 
-    # Afficher les graphiques dans des colonnes
     col1, col2, col3 = st.columns(3)
-
     with col1:
-        st.subheader("Nombre de défauts par type")
+        st.subheader("Défauts par type")
         type_counts = filtered_df['nom'].value_counts()
-        sns.barplot(x=type_counts.index, y=type_counts.values, palette='Blues_d')
+        plt.figure(figsize=(5, 3))
+        sns.barplot(x=type_counts.index, y=type_counts.values, palette="Blues_d")
         plt.xticks(rotation=45)
-        plt.xlabel("Type de défaut")
-        plt.ylabel("Nombre de défauts")
         st.pyplot(plt)
 
     with col2:
-        st.subheader("Nombre de défauts par gravité")
+        st.subheader("Défauts par gravité")
         gravite_counts = filtered_df['gravite'].value_counts()
-        sns.barplot(x=gravite_counts.index, y=gravite_counts.values, palette='Reds_d')
-        plt.xticks(rotation=45)
-        plt.xlabel("Gravité")
-        plt.ylabel("Nombre de défauts")
+        plt.figure(figsize=(5, 3))
+        sns.barplot(x=gravite_counts.index, y=gravite_counts.values, palette="Reds_d")
         st.pyplot(plt)
 
     with col3:
-        st.subheader("Proportion de défauts par gravité (Diagramme en cercle)")
-        gravite_counts.plot.pie(autopct='%1.1f%%', colors=sns.color_palette("Reds_d"), ylabel="")
+        st.subheader("Proportion par gravité")
+        gravite_counts.plot.pie(autopct="%1.1f%%", colors=sns.color_palette("Reds_d"))
+        plt.ylabel("")
         st.pyplot(plt)
-
-    st.subheader("Proportions de défauts par localisation")
-    localisation_counts = filtered_df['localisation'].value_counts().head(10)
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x=localisation_counts.index, y=localisation_counts.values, palette='Greens_d')
-    plt.xticks(rotation=45)
-    plt.xlabel("Localisation")
-    plt.ylabel("Nombre de défauts")
-    st.pyplot(plt)
 
 # Onglet Carte
 with tabs[1]:
