@@ -6,8 +6,7 @@ from folium import plugins
 import matplotlib.pyplot as plt
 import seaborn as sns
 import requests
-from chatterbot import ChatBot
-from chatterbot.trainers import ChatterBotCorpusTrainer
+
 
 # Configuration Streamlit
 st.set_page_config(page_title="Application d'Infrastructure Routière", page_icon="🦺", layout="wide")
@@ -33,10 +32,7 @@ def fetch_news_from_serpapi(query="infrastructure routière"):
         st.error("Erreur lors de la récupération des actualités. Veuillez vérifier votre clé API SerpAPI.")
         return []
 
-# Initialisation du chatbot
-chatbot = ChatBot("Infrastructure Bot")
-trainer = ChatterBotCorpusTrainer(chatbot)
-trainer.train("chatterbot.corpus.english")  # Charger le corpus en anglais
+
 
 # Fonction pour se connecter à la base de données
 def get_db_connection():
@@ -57,7 +53,7 @@ def get_defauts():
     return df
 
 # Onglets principaux
-tabs = st.tabs(["Dashboard", "Carte", "Signalement", "Chatbot", "Actualités"])
+tabs = st.tabs(["Dashboard", "Carte", "Signalement",  "Actualités"])
 
 # Onglet Dashboard
 with tabs[0]:
@@ -130,24 +126,9 @@ with tabs[2]:
             conn.close()
             st.success("Signalement enregistré avec succès.")
 
-# Onglet Chatbot
-with tabs[3]:
-    st.header("Chatbot - Infrastructure Bot")
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-
-    user_input = st.text_input("Posez votre question :")
-    if st.button("Envoyer"):
-        if user_input:
-            st.session_state.chat_history.append(("Vous", user_input))
-            response = chatbot.get_response(user_input)
-            st.session_state.chat_history.append(("Chatbot", str(response)))
-
-    for speaker, message in st.session_state.chat_history:
-        st.write(f"**{speaker}:** {message}")
 
 # Onglet Actualités
-with tabs[4]:
+with tabs[3]:
     st.header("Actualités")
     st.write("Retrouvez ici les dernières actualités concernant l'infrastructure routière et les innovations.")
 
