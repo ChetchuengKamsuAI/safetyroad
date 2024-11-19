@@ -27,6 +27,8 @@ charset-normalizer==3.3.2
 click==8.1.7
 cloudpickle==3.0.0
 colorama==0.4.6
+chatterbot
+chatterbot_corpus
 conllu==5.0.1
 contourpy==1.3.0
 cycler==0.12.1

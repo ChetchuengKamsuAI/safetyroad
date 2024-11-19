@@ -5,19 +5,38 @@ import folium
 from folium import plugins
 import matplotlib.pyplot as plt
 import seaborn as sns
-from openai import OpenAI
-
-# Initialisation de la clé API OpenAI
-api_key = "sk-..."  # Remplacez par votre clé API OpenAI
-client = OpenAI(api_key=api_key)
-
-# Vérification de la clé API
-if not client.api_key:
-    raise ValueError("Clé API OpenAI manquante.")
+import requests
+from chatterbot import ChatBot
+from chatterbot.trainers import ChatterBotCorpusTrainer
 
 # Configuration Streamlit
 st.set_page_config(page_title="Application d'Infrastructure Routière", page_icon="🦺", layout="wide")
 st.title("Application d'Infrastructure Routière")
+
+# Configuration SerpAPI
+SERPAPI_API_KEY = "6328b60d23198d8e3ef25bad85cc2760b9b3fa4de8a83bdb0bfc0fc124714dcd"  # Remplacez par votre clé API
+SERPAPI_URL = "https://serpapi.com/search"
+
+# Fonction pour récupérer les actualités via SerpAPI
+def fetch_news_from_serpapi(query="infrastructure routière"):
+    params = {
+        "engine": "google_news",
+        "q": query,
+        "gl": "us",
+        "hl": "en",
+        "api_key": SERPAPI_API_KEY
+    }
+    response = requests.get(SERPAPI_URL, params=params)
+    if response.status_code == 200:
+        return response.json().get("articles", [])
+    else:
+        st.error("Erreur lors de la récupération des actualités. Veuillez vérifier votre clé API SerpAPI.")
+        return []
+
+# Initialisation du chatbot
+chatbot = ChatBot("Infrastructure Bot")
+trainer = ChatterBotCorpusTrainer(chatbot)
+trainer.train("chatterbot.corpus.english")  # Charger le corpus en anglais
 
 # Fonction pour se connecter à la base de données
 def get_db_connection():
@@ -37,23 +56,8 @@ def get_defauts():
     conn.close()
     return df
 
-# Fonction pour obtenir une réponse du chatbot OpenAI
-def get_chatgpt_response(user_input):
-    try:
-        response = client.completions.create(
-            model="gpt-3.5-turbo",
-            prompt=user_input,
-            max_tokens=150
-        )
-        if 'choices' in response and len(response['choices']) > 0:
-            return response['choices'][0]['message']['content']
-        return "Aucune réponse valide reçue."
-    except Exception as e:
-        st.error(f"Erreur : {e}")
-        return "Une erreur est survenue. Veuillez réessayer."
-
 # Onglets principaux
-tabs = st.tabs(["Dashboard", "Carte", "Signalement", "Chatbot"])
+tabs = st.tabs(["Dashboard", "Carte", "Signalement", "Chatbot", "Actualités"])
 
 # Onglet Dashboard
 with tabs[0]:
@@ -128,7 +132,7 @@ with tabs[2]:
 
 # Onglet Chatbot
 with tabs[3]:
-    st.header("Chatbot")
+    st.header("Chatbot - Infrastructure Bot")
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
@@ -136,8 +140,29 @@ with tabs[3]:
     if st.button("Envoyer"):
         if user_input:
             st.session_state.chat_history.append(("Vous", user_input))
-            response = get_chatgpt_response(user_input)
-            st.session_state.chat_history.append(("Chatbot", response))
+            response = chatbot.get_response(user_input)
+            st.session_state.chat_history.append(("Chatbot", str(response)))
 
     for speaker, message in st.session_state.chat_history:
         st.write(f"**{speaker}:** {message}")
+
+# Onglet Actualités
+with tabs[4]:
+    st.header("Actualités")
+    st.write("Retrouvez ici les dernières actualités concernant l'infrastructure routière et les innovations.")
+
+    # Récupérer les actualités via SerpAPI
+    news_results = fetch_news_from_serpapi(query="road safety")
+
+    # Afficher les actualités
+    if news_results:
+        for news in news_results:
+            st.subheader(news["title"])
+            st.write(f"**Source :** {news['source']['name']} | **Publié le :** {news.get('published_date', 'Non spécifié')}")
+            st.write(news.get("snippet", "Pas de description disponible."))  # Extrait de l'article
+            if "thumbnail" in news:
+                st.image(news["thumbnail"], width=700)
+            st.markdown(f"[Lire l'article complet]({news['link']})", unsafe_allow_html=True)
+            st.markdown("---")
+    else:
+        st.write("Aucune actualité disponible pour le moment.")
