@@ -12,27 +12,30 @@ st.set_page_config(page_title="Application d'Infrastructure Routière", page_ico
 st.title("Application d'Infrastructure Routière")
 
 # Configuration SerpAPI
-SERPAPI_API_KEY = "6328b60d23198d8e3ef25bad85cc2760b9b3fa4de8a83bdb0bfc0fc124714dcd"  # Remplacez par votre clé API
-SERPAPI_URL = "https://serpapi.com/search"
+API_KEY = '6328b60d23198d8e3ef25bad85cc2760b9b3fa4de8a83bdb0bfc0fc124714dcd'
 
-# Fonction pour récupérer les actualités via SerpAPI
-def fetch_news_from_serpapi(query="road infrastructure"):
+def get_agriculture_news(api_key):
+    # Définir les paramètres de la requête
     params = {
-        "engine": "google_news",
-        "q": query,
-        "api_key": SERPAPI_API_KEY
+        'engine': 'google_news',
+        'q': 'road infrastructure in cameroon',  # Recherche sur l'agriculture au Cameroun
+        'api_key': api_key,
+        
     }
-    response = requests.get(SERPAPI_URL, params=params)
-    if response.status_code == 200:
-        return response.json().get("articles", [])
-    else:
-        st.error("Erreur lors de la récupération des actualités. Veuillez vérifier votre clé API SerpAPI.")
-        return []
 
-# Fonction pour se connecter à la base de données
-def get_db_connection():
-    conn = sqlite3.connect('infrastructures_routieres.db')
-    return conn
+    # Effectuer la requête HTTP vers SerpApi
+    response = requests.get('https://serpapi.com/search', params=params)
+
+    # Vérifier si la requête a réussi
+    if response.status_code == 200:
+        # Retourner les résultats en format JSON
+        return response.json()
+    else:
+        print(f"Erreur {response.status_code}: Impossible d'obtenir les données.")
+        return None
+
+# Exemple d'utilisation
+news_data = get_agriculture_news(API_KEY)
 
 # Fonction pour récupérer les défauts
 def get_defauts():
@@ -131,35 +134,32 @@ with tabs[2]:
 # Onglet Actualités
 # Onglet Actualités
 with tabs[3]:
-    st.header("📰 Actualités sur l'Infrastructure Routière")
-    st.markdown("""
-    Consultez les dernières nouvelles sur l'infrastructure routière et la sécurité. 
-    Utilisez la barre de recherche pour trouver des sujets spécifiques.
-    """)
+    st.markdown("<h1 style='text-align: center;'>📰 Actualités sur l'Infrastructure Routière</h1>", unsafe_allow_html=True)
+    news_data = get_agriculture_news(API_KEY)
 
-    # Recherche des actualités
-    search_query = st.text_input("🔍 Recherchez des actualités", value="road safety", 
-                                 placeholder="Exemple : sécurité routière, infrastructures...")
-    news_results = fetch_news_from_serpapi(query=search_query)
+    # Vérifier si des données sont retournées par SerpApi
+    if 'news_results' in news_data and len(news_data['news_results']) > 0:
+        for article in news_data['news_results']:
+            # Afficher le titre de l'article
+            st.subheader(article['title'])
+            
+            # Afficher l'extrait de l'article
+            st.write(f"**Source**: {article['source']['name']}")
+            st.write(article.get('snippet', 'No description available.'))
 
-    # Affichage des résultats
-    if news_results:
-        st.markdown("---")
-        for news in news_results:
-            col1, col2 = st.columns([1, 3])  # Organisation en colonnes
-            with col1:
-                # Image de l'article
-                if "thumbnail" in news:
-                    st.image(news["thumbnail"], width=120)
-                else:
-                    st.image("https://via.placeholder.com/120", width=120, caption="Image non disponible")
+            # Afficher l'icône de la source (si disponible)
+            if 'icon' in article['source']:
+                st.image(article['source']['icon'], width=40)
 
-            with col2:
-                # Titre et détails de l'article
-                st.markdown(f"### [{news['title']}]({news['link']})")
-                st.write(f"**Source :** {news['source']['name']} | **Date :** {news.get('published_date', 'Non spécifiée')}")
-                st.write(news.get("snippet", "Pas de description disponible."))
+            # Afficher l'image miniature de l'article
+            if 'thumbnail' in article:
+                st.image(article['thumbnail'], use_column_width=True)
 
-            st.markdown("---")
+            # Afficher la date de publication
+            st.write(f"**Date**: {article['date']}")
+
+            # Lien vers l'article complet
+            st.write(f"[Lire la suite]({article['link']})")
+            st.write("---")
     else:
-        st.warning("⚠️ Aucune actualité trouvée pour votre recherche. Essayez un autre mot-clé.")
+        st.write("No news articles available.")
