@@ -66,7 +66,7 @@ def get_defauts():
 news_data = get_agriculture_news(API_KEY)
 
 # Onglets principaux
-tabs = st.tabs(["Dashboard", "Carte", "Signalement", "Actualités"])
+tabs = st.tabs(["Dashboard", "Carte", "Signalement", "Actualités","Chatbot"])
 
 # Onglet Dashboard
 with tabs[0]:
@@ -170,3 +170,36 @@ with tabs[3]:
             st.write("---")
     else:
         st.write("Aucun article d'actualité disponible.")
+# Onglet Chatbot
+with tabs[4]:
+    st.header("Chatbot")
+    st.write("Posez vos questions au Chatbot ci-dessous.")
+    
+    # Interface utilisateur pour interagir avec le chatbot
+    user_input = st.text_input("Votre question :", placeholder="Entrez votre question ici...")
+    
+    if st.button("Envoyer"):
+        if user_input.strip():  # Vérifie si l'entrée utilisateur n'est pas vide
+            url = "https://infinite-gpt.p.rapidapi.com/infinite-gpt"
+            payload = {
+                "query": user_input,
+                "sysMsg": "You are a friendly Chatbot."
+            }
+            headers = {
+                "x-rapidapi-key": "b42adb4e32msh8d21b5255dfbcbap175e61jsn94765790282f",
+                "x-rapidapi-host": "infinite-gpt.p.rapidapi.com",
+                "Content-Type": "application/json"
+            }
+            
+            try:
+                response = requests.post(url, json=payload, headers=headers)
+                if response.status_code == 200:
+                    result = response.json()
+                    st.write("### Réponse du Chatbot :")
+                    st.write(result.get("response", "Désolé, aucune réponse reçue."))
+                else:
+                    st.error(f"Erreur {response.status_code}: Impossible de contacter le chatbot.")
+            except Exception as e:
+                st.error(f"Une erreur est survenue : {e}")
+        else:
+            st.warning("Veuillez entrer une question avant d'envoyer.")
