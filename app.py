@@ -17,12 +17,10 @@ SERPAPI_API_KEY = "6328b60d23198d8e3ef25bad85cc2760b9b3fa4de8a83bdb0bfc0fc124714
 SERPAPI_URL = "https://serpapi.com/search"
 
 # Fonction pour récupérer les actualités via SerpAPI
-def fetch_news_from_serpapi(query="infrastructure routière"):
+def fetch_news_from_serpapi(query="road infrastructure"):
     params = {
         "engine": "google_news",
         "q": query,
-        "gl": "us",
-        "hl": "en",
         "api_key": SERPAPI_API_KEY
     }
     response = requests.get(SERPAPI_URL, params=params)
