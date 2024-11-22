@@ -129,20 +129,37 @@ with tabs[2]:
             st.success("Signalement enregistré avec succès.")
 
 # Onglet Actualités
+# Onglet Actualités
 with tabs[3]:
-    st.header("Actualités")
-    search_query = st.text_input("Recherchez des actualités", value="road safety")
+    st.header("📰 Actualités sur l'Infrastructure Routière")
+    st.markdown("""
+    Consultez les dernières nouvelles sur l'infrastructure routière et la sécurité. 
+    Utilisez la barre de recherche pour trouver des sujets spécifiques.
+    """)
+
+    # Recherche des actualités
+    search_query = st.text_input("🔍 Recherchez des actualités", value="road safety", 
+                                 placeholder="Exemple : sécurité routière, infrastructures...")
     news_results = fetch_news_from_serpapi(query=search_query)
 
-    # Afficher les actualités
+    # Affichage des résultats
     if news_results:
+        st.markdown("---")
         for news in news_results:
-            st.subheader(news["title"])
-            st.write(f"**Source :** {news['source']['name']} | **Publié le :** {news.get('published_date', 'Non spécifié')}")
-            st.write(news.get("snippet", "Pas de description disponible."))  # Extrait de l'article
-            if "thumbnail" in news:
-                st.image(news["thumbnail"], width=700)
-            st.markdown(f"[Lire l'article complet]({news['link']})", unsafe_allow_html=True)
+            col1, col2 = st.columns([1, 3])  # Organisation en colonnes
+            with col1:
+                # Image de l'article
+                if "thumbnail" in news:
+                    st.image(news["thumbnail"], width=120)
+                else:
+                    st.image("https://via.placeholder.com/120", width=120, caption="Image non disponible")
+
+            with col2:
+                # Titre et détails de l'article
+                st.markdown(f"### [{news['title']}]({news['link']})")
+                st.write(f"**Source :** {news['source']['name']} | **Date :** {news.get('published_date', 'Non spécifiée')}")
+                st.write(news.get("snippet", "Pas de description disponible."))
+
             st.markdown("---")
     else:
-        st.write("Aucune actualité disponible pour le moment.")
+        st.warning("⚠️ Aucune actualité trouvée pour votre recherche. Essayez un autre mot-clé.")
