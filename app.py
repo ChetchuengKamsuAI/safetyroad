@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import sqlite3
 import pandas as pd
 import folium
@@ -6,7 +6,6 @@ from folium import plugins
 import matplotlib.pyplot as plt
 import seaborn as sns
 import requests
-
 
 # Configuration Streamlit
 st.set_page_config(page_title="Application d'Infrastructure Routière", page_icon="🦺", layout="wide")
@@ -30,8 +29,6 @@ def fetch_news_from_serpapi(query="road infrastructure"):
         st.error("Erreur lors de la récupération des actualités. Veuillez vérifier votre clé API SerpAPI.")
         return []
 
-
-
 # Fonction pour se connecter à la base de données
 def get_db_connection():
     conn = sqlite3.connect('infrastructures_routieres.db')
@@ -51,7 +48,7 @@ def get_defauts():
     return df
 
 # Onglets principaux
-tabs = st.tabs(["Dashboard", "Carte", "Signalement",  "Actualités"])
+tabs = st.tabs(["Dashboard", "Carte", "Signalement", "Actualités"])
 
 # Onglet Dashboard
 with tabs[0]:
@@ -85,6 +82,13 @@ with tabs[0]:
         gravite_counts.plot.pie(autopct="%1.1f%%", colors=sns.color_palette("Reds_d"))
         plt.ylabel("")
         st.pyplot(plt)
+
+    # Histogramme
+    st.subheader("Distribution des défauts par gravité")
+    plt.figure(figsize=(10, 4))
+    sns.histplot(data=filtered_df, x="gravite", hue="nom", multiple="stack", palette="viridis")
+    plt.title("Histogramme des défauts")
+    st.pyplot(plt)
 
 # Onglet Carte
 with tabs[1]:
@@ -124,14 +128,11 @@ with tabs[2]:
             conn.close()
             st.success("Signalement enregistré avec succès.")
 
-
 # Onglet Actualités
 with tabs[3]:
     st.header("Actualités")
-    st.write("Retrouvez ici les dernières actualités concernant l'infrastructure routière et les innovations.")
-
-    # Récupérer les actualités via SerpAPI
-    news_results = fetch_news_from_serpapi(query="road safety")
+    search_query = st.text_input("Recherchez des actualités", value="road safety")
+    news_results = fetch_news_from_serpapi(query=search_query)
 
     # Afficher les actualités
     if news_results:
