@@ -153,6 +153,7 @@ with tabs[2]:
                     conn.close()
 
 # Onglet Actualités
+# Onglet Actualités
 with tabs[3]:
     st.markdown("<h1 style='text-align: center;'>📰 Actualités sur l'Infrastructure Routière</h1>", unsafe_allow_html=True)
     if news_data and 'news_results' in news_data and len(news_data['news_results']) > 0:
@@ -163,7 +164,7 @@ with tabs[3]:
             if 'icon' in article['source']:
                 st.image(article['source']['icon'], width=40)
             if 'thumbnail' in article:
-                st.image(article['thumbnail'], use_column_width=True)
+                st.image(article['thumbnail'], use_container_width=True)  # Modification ici
             st.write(f"**Date**: {article['date']}")
             st.write(f"[Lire la suite]({article['link']})")
             st.write("---")
